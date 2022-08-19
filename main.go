@@ -43,7 +43,7 @@ func homePage(w http.ResponseWriter, r *http.Request){	// this is the function w
 
 
 
-func returnAllArticles(w http.ResponseWriter, r *http.Request){
+func returnAllArticles(w http.ResponseWriter, r *http.Request){		// READ(GET REQUEST)
 	fmt.Println("Endpoint Hit: returnAllArticles")
 	
 	json.NewEncoder(w).Encode(Articles);	// this will encode my array data into json format and serve it to client as a response
@@ -53,7 +53,7 @@ func returnAllArticles(w http.ResponseWriter, r *http.Request){
 
 
 
-func returnSingleArticle(w http.ResponseWriter, r *http.Request){
+func returnSingleArticle(w http.ResponseWriter, r *http.Request){		// READ(GET REQUEST)
 	vars := mux.Vars(r)
 	key := vars["id"]
 
@@ -68,7 +68,7 @@ func returnSingleArticle(w http.ResponseWriter, r *http.Request){
 
 
 
-func createNewArticle(w http.ResponseWriter, r *http.Request){
+func createNewArticle(w http.ResponseWriter, r *http.Request){		// CREATE(POST REQUEST)
 	reqBody, _ := ioutil.ReadAll(r.Body)
 
 	var article Article
@@ -83,18 +83,70 @@ func createNewArticle(w http.ResponseWriter, r *http.Request){
 
 
 
+func updateArticle(w http.ResponseWriter, r *http.Request){
+	reqBody, _ := ioutil.ReadAll(r.Body);
+	var article Article
+	json.Unmarshal(reqBody, &article)
+
+	vars := mux.Vars(r)
+	key := vars["id"]
+
+
+	for i, articles := range Articles {
+		if(articles.ID == key){
+			articles.ID = article.ID
+			articles.Title = article.Title
+			articles.Desc = article.Desc
+			articles.Content = article.Content
+
+			Articles[i] = articles
+		}
+	}
+}
+
+
+
+
+func deleteArticle(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	key := vars["id"]
+
+	for index, article := range Articles {
+		if(article.ID == key) {
+			Articles = append(Articles[:index], Articles[index+1:]...)
+		}
+	}
+}
+
+
+
+
+
 
 
 func handleRequests() {	// As its name suggests, this function is used to handle requests made at particular path, i.e. which function to be executed for a particular path
 	// 
 	myRouter := mux.NewRouter().StrictSlash(true)
 	
+
+
 	
 	
 	myRouter.HandleFunc("/", homePage)
+
 	myRouter.HandleFunc("/all", returnAllArticles).Methods("GET")
+
 	myRouter.HandleFunc("/all", createNewArticle).Methods("POST")
+
+	myRouter.HandleFunc("/all/{id}", updateArticle).Methods("PUT")
+
+	myRouter.HandleFunc("/all/{id}", deleteArticle).Methods("DELETE")
+
 	myRouter.HandleFunc("/all/{id}", returnSingleArticle)
+
+
+
+
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))	
 }
